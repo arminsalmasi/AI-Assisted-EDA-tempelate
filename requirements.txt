@@ -1,0 +1,11 @@
+# Core data analysis and visualization libraries
+pandas
+numpy<2.0.0
+seaborn
+scikit-learn
+
+# Deep learning with macOS Metal (M-series GPU) acceleration
+tensorflow==2.18.0
+tensorflow-metal==1.2.0; sys_platform == 'darwin' and platform_machine == 'arm64'
+torch
+torchvision
