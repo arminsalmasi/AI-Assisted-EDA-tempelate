@@ -11,9 +11,9 @@ else
     RM = rm -rf
 endif
 
-.PHONY: all venv install test clean
+.PHONY: all venv install prepare test clean
 
-all: venv install
+all: venv install prepare test
 
 venv:
 	@if [ ! -d "$(VENV)" ]; then \
@@ -40,9 +40,14 @@ install: venv requirements.txt
 	@echo "Installing requirements using uv..."
 	$(UV) pip install -r requirements.txt
 
-test: install
+prepare: install
+	@echo "Running data preparation and feature engineering..."
+	$(VENV_PYTHON) src/prepare_data.py
+
+test: install prepare
 	@echo "Running tests..."
 	$(VENV_PYTHON) -m unittest discover -s tests -p "test_*.py"
 
 clean:
 	$(RM) $(VENV)
+	$(RM) data/interim

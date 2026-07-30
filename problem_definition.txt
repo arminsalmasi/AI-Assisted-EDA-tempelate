@@ -1,0 +1,68 @@
+================================================================================
+PROBLEM DEFINITION DOCUMENT
+================================================================================
+
+1. BUSINESS CONTEXT
+--------------------------------------------------------------------------------
+The project focuses on an on-demand, scheduled, and express online delivery platform 
+connecting customers with multi-category vendors (restaurants, grocery stores, 
+pharmacies) across different cities. 
+
+In a highly competitive market, the cost of acquiring new customers significantly 
+outpaces the cost of retaining existing ones. Consequently, long-term 
+profitability, customer lifetime value (CLV), and sustainable unit economics 
+rely heavily on maintaining consistent user engagement, ensuring reliable 
+delivery performance, and delivering high service quality to prevent churn.
+
+2. PROJECT OBJECTIVE
+--------------------------------------------------------------------------------
+The primary objective of this project is to perform an Exploratory Data Analysis 
+(EDA) on customer registration details, order transactions, and delivery 
+performance records to:
+- Identify patterns, trends, and drivers of customer retention.
+- Uncover friction points in delivery operations (e.g., delays, inaccuracies).
+- Categorize user behavior based on device preferences, vendor categories, 
+  and cohort lifetimes.
+- Provide actionable, data-driven recommendations to improve customer 
+  retention and unit economics.
+
+3. KEY RUNTIME KPIs
+--------------------------------------------------------------------------------
+Based on the available data columns, we will track the following three key performance indicators:
+
+- **Customer Retention / Purchase Frequency**: 
+  Measured by tracking the time delta between successive orders per customer, 
+  overall order frequency, and active lifetime (time elapsed between a customer's 
+  signup_date and their latest order_date).
+
+- **On-Time Delivery Rate (OTDR)**: 
+  The percentage of orders where delivery_status is "On-Time" or delay_minutes 
+  is 0. This measures operational reliability, a core driver of customer trust.
+
+- **Order Accuracy and Experience Rating**: 
+  The percentage of orders completed with "Correct" order_accuracy combined with 
+  the average customer_rating (1 to 5). This directly measures customer 
+  satisfaction and service execution quality.
+
+4. KEY HYPOTHESES TO TEST
+--------------------------------------------------------------------------------
+We will test the following three behavioral hypotheses during our EDA:
+
+- **Hypothesis 1: Delivery Friction drives Customer Churn**
+  *Statement*: Customers who experience a high average delay_minutes or a 
+  non-"Correct" order_accuracy in their first three orders exhibit a significantly 
+  lower repeat purchase rate and a shorter active lifetime compared to customers 
+  who experience on-time, accurate deliveries.
+
+- **Hypothesis 2: High Promotion Sensitivity correlates with Higher Churn**
+  *Statement*: Customers whose order history shows a high ratio of promo_used="Yes" 
+  (promo-driven shoppers) have a significantly higher churn rate and lower 
+  average order value (order_value_usd) once promotional discounts are absent, 
+  compared to organic (non-promo) shoppers.
+
+- **Hypothesis 3: Cross-Category and App-based Users show Higher Engagement**
+  *Statement*: Customers who place orders across multiple vendor_category values 
+  (e.g., buying from both Restaurants and Groceries) and use the "Mobile App" 
+  as their preferred_device have a higher order frequency and longer retention 
+  lifetimes than web-only or single-category shoppers.
+================================================================================
