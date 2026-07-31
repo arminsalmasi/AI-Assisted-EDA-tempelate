@@ -210,22 +210,27 @@ We review the demographics of our customer base to establish who the typical use
 """))
     
     # 17. Demographics code
-    cells.append(nbf.v4.new_code_cell("""fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    cells.append(nbf.v4.new_code_cell("""fig, axes = plt.subplots(2, 2, figsize=(15, 10))
 
 # Gender distribution
-sns.countplot(x='user_gender', data=customers, ax=axes[0], palette='pastel')
-axes[0].set_title('Customer Base by Gender')
-axes[0].set_xlabel('Gender')
+sns.countplot(x='user_gender', data=customers, ax=axes[0, 0], palette='pastel')
+axes[0, 0].set_title('Customer Base by Gender')
+axes[0, 0].set_xlabel('Gender')
 
 # Age Group distribution
-sns.countplot(x='age_bracket', data=customers, ax=axes[1], palette='Set2', order=sorted(customers['age_bracket'].unique()))
-axes[1].set_title('Customer Base by Age Bracket')
-axes[1].set_xlabel('Age Bracket')
+sns.countplot(x='age_bracket', data=customers, ax=axes[0, 1], palette='Set2', order=sorted(customers['age_bracket'].unique()))
+axes[0, 1].set_title('Customer Base by Age Bracket')
+axes[0, 1].set_xlabel('Age Bracket')
+
+# Preferred Device
+sns.countplot(x='device_type', data=customers, ax=axes[1, 0], palette='mako')
+axes[1, 0].set_title('Customer Base by Device Type')
+axes[1, 0].set_xlabel('Device Type')
 
 # Customer Segment
-sns.countplot(x='account_segment', data=customers, ax=axes[2], palette='rocket')
-axes[2].set_title('Customer Segments')
-axes[2].set_xlabel('Segment')
+sns.countplot(x='account_segment', data=customers, ax=axes[1, 1], palette='rocket')
+axes[1, 1].set_title('Customer Segments')
+axes[1, 1].set_xlabel('Segment')
 
 plt.tight_layout()
 plt.savefig('../report/figures/univariate_customer_demographics.png', dpi=300)
@@ -257,6 +262,68 @@ plt.savefig('../report/figures/univariate_customer_locations.png', dpi=300)
 plt.show()
 """))
     
+    # 19b. Cohort Analysis Markdown
+    cells.append(nbf.v4.new_markdown_cell("""## 5. Cohort Retention Analysis (First-Month vs. Later-Month Signups)
+We analyze customer registration cohorts to understand how long-term retention behaviors and active lifespans are distributed across signup cohorts.
+Specifically, we contrast **First-Month Users** (who registered in December 2023, the first month of operations) with **Later-Month Users** (who registered in January 2024 or later).
+
+### The Right-Censoring Bias Warning:
+In raw data, users who joined in later months (e.g., March 2026) appear to have a lower "churn rate" because they have had less than 90 days of possible activity tracking before the dataset end date (May 14, 2026). To resolve this, we compare the return rates within defined look-forward windows (30-day, 60-day, 90-day return rates) that are adjusted for right-censoring (censored users set to `NaN` when observation windows are incomplete).
+"""))
+
+    # 19c. Cohort Analysis Code
+    cells.append(nbf.v4.new_code_cell("""# Define registration cohorts (month-level)
+customers['registration_month'] = customers['registration_date'].dt.to_period('M')
+
+# 1. Plot return rates across cohorts over time (adjusted for censoring)
+cohort_return_rates = customers.groupby('registration_month', observed=False)[['returned_after_first_order_30d', 'returned_after_first_order_60d', 'returned_after_first_order_90d']].mean() * 100
+cohort_return_rates.index = cohort_return_rates.index.astype(str)
+
+fig, ax = plt.subplots(figsize=(12, 6))
+cohort_return_rates.plot(kind='line', marker='o', ax=ax, linewidth=2)
+ax.set_title('First-Order Return Rates by Monthly Registration Cohort (Censoring Adjusted)')
+ax.set_xlabel('Registration Cohort (Month)')
+ax.set_ylabel('Return Rate (%)')
+ax.set_ylim(40, 105)
+plt.xticks(range(len(cohort_return_rates.index)), cohort_return_rates.index, rotation=45)
+plt.tight_layout()
+plt.savefig('../report/figures/univariate_cohort_return_rates.png', dpi=300)
+plt.show()
+
+# 2. Compare First-Month Cohort (Dec 2023) vs Later-Month Cohorts (Jan 2024 and later)
+customers['is_first_month_cohort'] = (customers['registration_date'] < '2024-01-01').map({True: 'First Month (Dec 2023)', False: 'Later Months (Jan 2024+)'})
+
+cohort_comp = customers.groupby('is_first_month_cohort').agg(
+    customer_count=('user_id', 'count'),
+    mean_frequency=('frequency', 'mean'),
+    median_frequency=('frequency', 'median'),
+    mean_active_lifespan_days=('active_lifespan_days', 'mean'),
+    raw_churn_rate=('is_churned', 'mean'),
+    adjusted_return_rate_30d=('returned_after_first_order_30d', 'mean')
+)
+cohort_comp['raw_churn_rate'] *= 100
+cohort_comp['adjusted_return_rate_30d'] *= 100
+
+print("Cohort Comparison Table:")
+print(cohort_comp.round(2).to_markdown())
+
+# Plot comparison
+fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+sns.barplot(data=customers, x='is_first_month_cohort', y='frequency', ax=axes[0], palette='Set2', errorbar=None, edgecolor='black')
+axes[0].set_title('Average Order Frequency by Cohort Group')
+axes[0].set_xlabel('Cohort Group')
+axes[0].set_ylabel('Mean Orders Placed')
+
+sns.barplot(data=customers, x='is_first_month_cohort', y='active_lifespan_days', ax=axes[1], palette='pastel', errorbar=None, edgecolor='black')
+axes[1].set_title('Mean Active Lifespan (Days) by Cohort Group')
+axes[1].set_xlabel('Cohort Group')
+axes[1].set_ylabel('Active Lifespan (Days)')
+
+plt.tight_layout()
+plt.savefig('../report/figures/univariate_cohort_comparison.png', dpi=300)
+plt.show()
+"""))
+    
     # 20. Summary
     cells.append(nbf.v4.new_markdown_cell("""## Summary of Key Univariate Findings
 
@@ -264,6 +331,7 @@ plt.show()
 2. **Delays distribution**: Delayed orders exhibit positive delay minutes. The cumulative distribution (CDF) shows that roughly 90% of delays are under 30 minutes, indicating a heavy tail for extreme delays.
 3. **High Churn Rate**: **53% of our customer base** is classified as behaviorally churned (>90 days of inactivity). This demonstrates a massive engagement issue.
 4. **Geographic Concentration**: Over 50% of the customer base is concentrated in Texas (TX) and California (CA), with Dallas, Houston, Los Angeles, and San Jose being our largest urban markets.
+5. **Cohort Right-Censoring Effect**: The Dec 2023 first-month cohort has the highest raw churn rate (92.3%) simply due to having a longer 2.5-year tracking window. In contrast, censoring-adjusted return rates show that the first-order 30-day return rate is stable at ~80-85% across all registration cohorts.
 """))
     
     nb.cells = cells

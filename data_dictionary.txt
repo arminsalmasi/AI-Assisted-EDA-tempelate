@@ -3,14 +3,14 @@ DATA DICTIONARY & HYPOTHESIS FEASIBILITY EVALUATION
 ================================================================================
 
 This document contains descriptions, types, and values of the columns in the three
-raw datasets (`customers.csv`, `orders.csv`, and `deliveries.csv`), followed by an
+raw datasets (`users_profile.csv`, `transactions_log.csv`, and `fulfillments_log.csv`), followed by an
 evaluation of their sufficiency for testing our hypotheses, and identified gaps.
 
 --------------------------------------------------------------------------------
 1. DATA DICTIONARIES
 --------------------------------------------------------------------------------
 
-A. CUSTOMERS DATASET (`customers.csv`)
+A. CUSTOMERS DATASET (`users_profile.csv`)
 Shape: 5,000 rows, 8 columns
 No missing values.
 --------------------------------------------------------------------------------
@@ -25,7 +25,7 @@ user_gender        | String    | Gender ('Female', 'Male', 'Other')
 account_segment    | String    | Loyalty/value segment ('Intro', 'Standard', 'Elite')
 device_type        | String    | Main platform device used ('App', 'Website')
 
-B. ORDERS DATASET (`orders.csv`)
+B. ORDERS DATASET (`transactions_log.csv`)
 Shape: 73,022 rows, 10 columns
 No missing values.
 --------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ gross_amount_usd    | Float     | Total value of the order in USD
 coupon_applied      | String    | Whether a discount promo was applied ('Yes', 'No')
 coupon_discount_usd | Float     | Monetary value of discount applied (0.0 if coupon_applied is 'No')
 
-C. DELIVERIES DATASET (`deliveries.csv`)
+C. DELIVERIES DATASET (`fulfillments_log.csv`)
 Shape: 73,022 rows, 8 columns
 No missing values.
 --------------------------------------------------------------------------------
@@ -88,6 +88,7 @@ user_rating         | Integer   | Star rating left by the customer (1 to 5 stars
 --------------------------------------------------------------------------------
 3. IDENTIFIED DATA GAPS & LIMITATIONS
 --------------------------------------------------------------------------------
+
 While the current datasets are sufficient to test all defined hypotheses, we have
 identified the following data gaps which would enhance the robustness of future analyses:
 
@@ -100,3 +101,17 @@ identified the following data gaps which would enhance the robustness of future 
    While we have order values and discounts, we lack data on vendor commission rates, 
    delivery driver payouts, marketing costs, and customer acquisition cost (CAC). 
    This prevents full net profit margin calculations.
+
+3. **Lack of Personalization & Marketing Campaign Data**:
+   The business objective highlights retention via personalized interactions. However, 
+   the dataset contains no records of customer exposures to marketing campaigns, 
+   loyalty communications, product recommendations, or personalization settings. 
+   This prevents direct empirical evaluation of the personalization channel.
+
+Do these gaps hinder the analysis?
+----------------------------------
+No. These gaps do not hinder the analysis of the three defined core hypotheses. The 
+current datasets contain all the necessary variables (delivery times, content accuracy, 
+discounts, transaction amounts, vendor categories, registration dates, and devices) 
+required to analyze behavioral churn (defined as 90 days of inactivity) and evaluate 
+retention, spend behavior, and operational delays.

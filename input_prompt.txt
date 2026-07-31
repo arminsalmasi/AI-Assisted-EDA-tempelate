@@ -1,0 +1,65 @@
+● "Here is the business context and objective I am working on: An online delivery platform which connects customers with vendors like restaurants, grocery stores, pharmacies, the platform operates across different cities and has on-demand, scheduled, and express delivery services. The business model relies on maintaining customer retention by ensuring consistent user engagement, reliable deliveries, and personalized interaction. The market is competitive, so acquiring new customers is more expensive than retention. So the KPI is customer retention when it comes to long-term profitability, customer lifetime value, and sustainable unit economics.
+objectives: The main objective is performing an EDA.
+Task: @Problem Definition Document  clearly outline: (1) business context, (2)
+project objective, (3) three KPIs, (4) three key hypotheses. Save this document as a text
+file.
+"
+
+Data Understanding and Profiling Techniques
+● "I have collected the datasets and placed them in the 'raw' folder under 'data'. Please
+review them and update  @data dictionary as a text file at root. Then, evaluate whether the
+available datasets are sufficient to test the defined hypotheses. If there are any gaps,
+please document them in the same text file."
+● "Do these gaps hinder the analysis, or can I still perform a meaningful analysis with the
+current data?"
+
+Constructing the Analytical Dataset
+● "Next, I would like to perform descriptive analysis. For this, please engineer the
+necessary features and, if required, combine the datasets to prepare a dataset that can
+also be used for future hypothesis testing."
+
+Data Cleaning and Domain Alignment
+● "On the processed dataset, please perform a thorough check for missing values,
+inconsistencies, and other data quality issues.
+
+Univariate Analysis
+● "@01_univariate_analysis.ipynb Now, please begin with univariate analysis. Visualize the relevant variables and
+add the plots to the notebook so I can review them there."
+● "@01_univariate_analysis.ipynb What is the distribution of retention across different
+customer cohorts (e.g., first-month users vs later-month users)?"
+
+● "@01_univariate_analysis.ipynb What is the frequency distribution of each demographic
+variable individually (city, age groups, gender, device)?"
+
+Bivariate Analysis
+● "@02_bivariate_analysis.ipynb Okay, let's start with bivariate analysis. Can you help me visualize the necessary plots
+for the hypotheses I am going to test? Strictly, don't perform hypothesis testing. 
+● "@02_bivariate_analysis.ipynb How does retention differ across delivery experience
+levels (delivery delay, on-time rate, and CSAT)?"
+● "@02_bivariate_analysis.ipynb How does retention vary with customer spending
+behavior (average order value and items per order)?"
+
+Multivariate Analysis
+● "@03_multivariate_analysis.ipynb' Okay. Let's start with multivariate analysis. Can you help me visualize the necessary
+plots for the hypotheses I am going to test on? Strictly, don't perform hypothesis testing.
+"
+● "Now that we have completed the univariate, bivariate, and multivariate analyses, please
+document the key observations in a separate file, structured as a narrative that presents
+the findings as a cohesive story."
+
+Hypothesis Testing
+● "Okay. Now, let's begin the actual hypothesis testing. Please review the problem
+definition file and in '@Hypothesis Testing.' In this file, for each
+hypothesis, include: (1) the statistical test to be performed, (2) the subset of data
+required, (3) any other necessary details (assumptions, metrics, etc.). First, create the
+file. Once I review it and give approval, you can proceed with the analysis."
+
+
+Synthesis of Insights and Report Development
+● "Can you create a well-structured report from all the analysis and present it as an HTML
+page? The report should include the problem statement, data overview, analysis, key
+insights, and recommendations. Make the page visually appealing with clear sections,
+headings, and charts wherever needed. Include graphs to explain important patterns,
+
+and make sure everything is easy to understand. Also add a clean layout with proper
+spacing, colors, and readable text."
