@@ -228,6 +228,70 @@ plt.tight_layout()
 plt.savefig('../report/figures/bivariate_demographics_vs_churn.png', dpi=300)
 plt.show()
 """))
+
+    # 15b. Delivery Experience vs Churn Markdown
+    cells.append(nbf.v4.new_markdown_cell("""## 5. Retention vs. Customer-Level Delivery Experience
+We evaluate how overall customer-level delivery experiences differ between customers who remain active vs. those who behaviorally churn (`is_churned`). We examine:
+1. **Prompt Delivery Rate**: The proportion of orders that arrive on time.
+2. **Average Delay Minutes**: The average late duration in minutes.
+3. **Average Rating (CSAT)**: The average star rating left by the customer.
+"""))
+
+    # 15c. Delivery Experience vs Churn Code
+    cells.append(nbf.v4.new_code_cell("""# Set up labels for churn
+customers['churn_label'] = customers['is_churned'].map({0: 'Active (Retained)', 1: 'Churned'})
+
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+
+# 1. Prompt Delivery Rate vs Churn
+sns.boxplot(data=customers, x='churn_label', y='prompt_delivery_rate', ax=axes[0], palette='Set2')
+axes[0].set_title('On-Time Delivery Rate by Retention')
+axes[0].set_xlabel('')
+axes[0].set_ylabel('Prompt Delivery Rate')
+
+# 2. Average Delay Minutes vs Churn
+sns.boxplot(data=customers, x='churn_label', y='average_delay_minutes', ax=axes[1], palette='pastel')
+axes[1].set_title('Average Delay Minutes by Retention')
+axes[1].set_xlabel('')
+axes[1].set_ylabel('Average Delay (Minutes)')
+
+# 3. Average Rating (CSAT) vs Churn
+sns.boxplot(data=customers, x='churn_label', y='average_rating', ax=axes[2], palette='mako')
+axes[2].set_title('Average Rating (CSAT) by Retention')
+axes[2].set_xlabel('')
+axes[2].set_ylabel('Average Rating (1-5 Stars)')
+
+plt.tight_layout()
+plt.savefig('../report/figures/bivariate_delivery_experience_vs_churn.png', dpi=300)
+plt.show()
+"""))
+
+    # 15d. Spend Behavior vs Churn Markdown
+    cells.append(nbf.v4.new_markdown_cell("""## 6. Retention vs. Customer Spending Behavior
+We evaluate if customer spending behavior correlates with retention by comparing active vs. churned customer profiles on:
+1. **Average Order Value (AOV)**: The mean gross order amount in USD.
+2. **Average Items per Order**: The average number of items purchased per basket.
+"""))
+
+    # 15e. Spend Behavior vs Churn Code
+    cells.append(nbf.v4.new_code_cell("""fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# 1. Average Order Value (AOV) vs Churn
+sns.boxplot(data=customers, x='churn_label', y='average_order_value', ax=axes[0], palette='crest')
+axes[0].set_title('Average Order Value (AOV) by Retention')
+axes[0].set_xlabel('')
+axes[0].set_ylabel('Average Order Value ($)')
+
+# 2. Average Items per Order vs Churn
+sns.boxplot(data=customers, x='churn_label', y='average_items_count', ax=axes[1], palette='rocket')
+axes[1].set_title('Average Items per Order by Retention')
+axes[1].set_xlabel('')
+axes[1].set_ylabel('Average Items Count')
+
+plt.tight_layout()
+plt.savefig('../report/figures/bivariate_spend_behavior_vs_churn.png', dpi=300)
+plt.show()
+"""))
     
     # 16. Summary Bivariate
     cells.append(nbf.v4.new_markdown_cell("""## Summary of Key Bivariate Insights
@@ -241,6 +305,9 @@ plt.show()
 3. **Usage Breadth Drives Retention (Hypothesis 3 Strongly Supported)**:
    - Repeat customers who order from only 1 category exhibit a churn rate of ~63.5%, which drops dramatically for users purchasing across multiple categories.
    - Similarly, using multiple delivery methods is linked with significantly lower churn.
+4. **Operational and Spending Profiling vs Retention**:
+   - Retained (active) users exhibit significantly higher CSAT ratings, higher prompt delivery rates, and lower average delay times.
+   - Spending metrics show that active and churned customers have highly overlapping average order value (AOV) distributions, indicating that the baseline transaction size is not the primary driver of customer loyalty; service quality is.
 """))
     
     nb.cells = cells

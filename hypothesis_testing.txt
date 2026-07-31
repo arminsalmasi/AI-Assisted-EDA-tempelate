@@ -1,0 +1,80 @@
+================================================================================
+HYPOTHESIS TESTING PLAN & SPECIFICATIONS
+================================================================================
+
+This document details the statistical testing plan for FlashDelivery's three core customer retention hypotheses. The results of these tests will determine the statistical significance of operational, promotional, and engagement factors on user repeat purchasing.
+
+--------------------------------------------------------------------------------
+1. HYPOTHESIS 1: Delivery Friction drives Customer Churn
+--------------------------------------------------------------------------------
+*Statement*: Customers who experience high average late_minutes or a non-"Accurate" accuracy_status in their first three orders exhibit a significantly lower repeat purchase rate and a shorter active lifetime compared to customers who experience prompt, accurate deliveries.
+
+A. STATISTICAL TESTS TO BE PERFORMED
+   1. **Chi-Square Test of Independence**:
+      - Test association between First Order Delivery Status (Prompt vs. Late) and 30-day, 60-day, and 90-day Return Flags (Returned vs. Did Not Return).
+      - Test association between First Order Content Accuracy (Accurate vs. Incomplete vs. Incorrect) and the Return Flags.
+   2. **Mann-Whitney U Test (Non-parametric)**:
+      - Compare the distributions of first-order delay minutes (`late_minutes`) and first-order satisfaction ratings (`user_rating`) between customers who returned within 30 days vs. those who did not.
+   3. **Binary Logistic Regression**:
+      - Model: `returned_after_first_order_30d ~ late_minutes + user_rating + C(accuracy_status) + Controls`
+      - Controls include: order value, items count, account segment, and preferred device type.
+      - Evaluate odds ratios (OR) and p-values for delivery experience metrics.
+
+B. SUBSET OF DATA REQUIRED
+   - **Unit of Analysis**: Individual customers (one row per customer).
+   - **Cohort Filters**: Customers with a completed look-forward observation window. Specifically, for the 30-day return flag, we exclude customers whose first order occurred less than 30 days before the dataset end date (`full_30d_observation_flag == 1`). Similarly for 60-day and 90-day return flags.
+   - **Variables**: `late_status`, `accuracy_status`, `late_minutes`, `user_rating` from the first order (`order_seq == 1`).
+
+C. OTHER DETAILS & ASSUMPTIONS
+   - **Hypothesis Metrics**: Odds ratios (for regression coefficients), Chi-Square statistic, Mann-Whitney U statistic, p-values (threshold alpha = 0.05).
+   - **Multiple Testing Correction**: Benjamini-Hochberg (BH) False Discovery Rate (FDR) control applied to raw p-values within the hypothesis.
+   - **Assumptions**: 
+     - Chi-Square assumes independent observations and expected frequency in each cell >= 5.
+     - Mann-Whitney U assumes ordinal or continuous dependent variable and independent groups.
+     - Logistic regression assumes linear relationship between log-odds and continuous predictors, and no severe multicollinearity (VIF < 5).
+
+--------------------------------------------------------------------------------
+2. HYPOTHESIS 2: High Promotion Sensitivity correlates with Higher Churn
+--------------------------------------------------------------------------------
+*Statement*: Customers whose order history shows a high ratio of coupon_applied="Yes" (coupon-driven shoppers) have a significantly higher churn rate and lower average order value (gross_amount_usd) once promotional discounts are absent, compared to organic (non-coupon) shoppers.
+
+A. STATISTICAL TESTS TO BE PERFORMED
+   1. **Chi-Square Test of Independence**:
+      - Test association between First Order Promotion Usage (Coupon Used vs. Not Used) and 30-day, 60-day, and 90-day Return Flags.
+   2. **Mann-Whitney U Test**:
+      - Compare first-order coupon discounts (`coupon_discount_usd`) between returned vs. non-returned customers (across all users, and restricted to promo users only).
+   3. **Binary Logistic Regression**:
+      - Model 1: `returned_after_first_order_30d ~ coupon_applied + Controls`
+      - Model 2 (Promo users only): `returned_after_first_order_30d ~ coupon_discount_usd + Controls`
+      - Evaluate the odds ratio of promo usage and discount depth on retention.
+
+B. SUBSET OF DATA REQUIRED
+   - **Unit of Analysis**: Individual customers.
+   - **Cohort Filters**: Right-censored observation eligibility window flags (`full_30d_observation_flag == 1` etc.).
+   - **Variables**: First order `coupon_applied` (Yes/No), first order `coupon_discount_usd`, and customer-level `promo_order_ratio` (percentage of lifetime orders with coupon applied).
+
+C. OTHER DETAILS & ASSUMPTIONS
+   - **Hypothesis Metrics**: Odds ratios, p-values, regression coefficient confidence intervals.
+   - **FDR Correction**: Benjamini-Hochberg adjustments.
+
+--------------------------------------------------------------------------------
+3. HYPOTHESIS 3: Cross-Category and App-based Users show Higher Engagement
+--------------------------------------------------------------------------------
+*Statement*: Customers who place orders across multiple merchant_category values (e.g., buying from both Eateries and Supermarkets) and use the "App" as their preferred device_type have a higher order frequency and longer retention lifetimes than website-only or single-category shoppers.
+
+A. STATISTICAL TESTS TO BE PERFORMED
+   1. **Mann-Whitney U Test**:
+      - Compare lifetime order frequency (`frequency`) and active lifespan (`active_lifespan_days`) across preferred device groups (`device_type` App vs. Website) and category usage groups (Single Category vs. Multi-Category).
+   2. **Two-Way Analysis of Variance (ANOVA) or Regression**:
+      - Model: `frequency ~ C(device_type) * C(multi_category_user_flag)`
+      - Model: `active_lifespan_days ~ C(device_type) * C(multi_category_user_flag)`
+      - Test main effects and interaction effects of device and cross-category usage on engagement.
+
+B. SUBSET OF DATA REQUIRED
+   - **Unit of Analysis**: Individual customers.
+   - **Variables**: `device_type`, `multi_category_user_flag`, `frequency`, `active_lifespan_days`.
+
+C. OTHER DETAILS & ASSUMPTIONS
+   - **Hypothesis Metrics**: F-statistics (ANOVA), coefficient estimates, p-values.
+   - **Assumptions**: Residuals of ANOVA are approximately normally distributed (or robust to deviation due to large sample size n=5000), homogeneity of variances.
+================================================================================

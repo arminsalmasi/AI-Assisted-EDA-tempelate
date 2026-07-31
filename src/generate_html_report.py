@@ -33,6 +33,8 @@ def compile_report():
         "uni_life": get_image_base64(REPORT_DIR / "figures" / "univariate_customer_lifespan_recency.png"),
         "uni_demo": get_image_base64(REPORT_DIR / "figures" / "univariate_customer_demographics.png"),
         "uni_loc": get_image_base64(REPORT_DIR / "figures" / "univariate_customer_locations.png"),
+        "uni_cohort_rates": get_image_base64(REPORT_DIR / "figures" / "univariate_cohort_return_rates.png"),
+        "uni_cohort_comp": get_image_base64(REPORT_DIR / "figures" / "univariate_cohort_comparison.png"),
         # Bivariate
         "bi_status": get_image_base64(REPORT_DIR / "figures" / "bivariate_status_retention.png"),
         "bi_rating": get_image_base64(REPORT_DIR / "figures" / "bivariate_rating_retention.png"),
@@ -40,6 +42,8 @@ def compile_report():
         "bi_vs_spend": get_image_base64(REPORT_DIR / "figures" / "bivariate_promo_vs_spend.png"),
         "bi_breadth": get_image_base64(REPORT_DIR / "figures" / "bivariate_usage_breadth_vs_churn.png"),
         "bi_demo": get_image_base64(REPORT_DIR / "figures" / "bivariate_demographics_vs_churn.png"),
+        "bi_delivery_churn": get_image_base64(REPORT_DIR / "figures" / "bivariate_delivery_experience_vs_churn.png"),
+        "bi_spend_churn": get_image_base64(REPORT_DIR / "figures" / "bivariate_spend_behavior_vs_churn.png"),
         # Multivariate
         "multi_corr": get_image_base64(REPORT_DIR / "figures" / "multivariate_correlation_matrix.png"),
         "multi_scatter": get_image_base64(REPORT_DIR / "figures" / "multivariate_delay_rating_scatter.png"),
@@ -71,6 +75,8 @@ def compile_report():
             --accent-color: #0ea5e9;
             --accent-glow: rgba(14, 165, 233, 0.4);
             --border-color: rgba(255, 255, 255, 0.08);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
         }}
         
         * {{
@@ -101,16 +107,16 @@ def compile_report():
         }}
         
         header h1 {{
-            font-size: 3rem;
-            background: linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%);
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 50%, #818cf8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 0.5rem;
         }}
         
         header p {{
-            font-size: 1.2rem;
             color: var(--text-muted);
+            font-size: 1.1rem;
         }}
         
         .container {{
@@ -123,43 +129,49 @@ def compile_report():
             display: flex;
             justify-content: center;
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
+            flex-wrap: wrap;
         }}
         
         .tab-btn {{
-            background: rgba(30, 41, 59, 0.5);
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 0.8rem 2rem;
-            font-size: 1rem;
+            padding: 0.8rem 1.5rem;
+            font-family: 'Outfit', sans-serif;
             font-weight: 600;
+            font-size: 1rem;
             border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }}
         
-        .tab-btn:hover, .tab-btn.active {{
-            background: var(--accent-color);
-            box-shadow: 0 0 15px var(--accent-glow);
+        .tab-btn:hover {{
+            background: rgba(14, 165, 233, 0.1);
             border-color: var(--accent-color);
-            color: #0f172a;
+            transform: translateY(-2px);
         }}
         
+        .tab-btn.active {{
+            background: var(--accent-color);
+            color: #0f172a;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }}
+        
+        /* Tab Contents */
         .tab-content {{
             display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
         }}
         
         .tab-content.active {{
             display: block;
-            animation: fadeIn 0.5s ease;
+            opacity: 1;
         }}
         
-        @keyframes fadeIn {{
-            from {{ opacity: 0; transform: translateY(10px); }}
-            to {{ opacity: 1; transform: translateY(0); }}
-        }}
-        
-        /* Layout Grid */
+        /* Grid Layout */
         .grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
@@ -167,69 +179,118 @@ def compile_report():
             margin-bottom: 2rem;
         }}
         
+        @media (max-width: 768px) {{
+            .grid {{
+                grid-template-columns: 1fr;
+            }}
+        }}
+        
+        /* Cards */
         .card {{
             background: var(--card-bg);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }}
+        
+        .card:hover {{
+            transform: translateY(-4px);
         }}
         
         .card.full-width {{
             grid-column: 1 / -1;
         }}
         
-        .card img {{
-            width: 100%;
-            height: auto;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
+        .card h2 {{
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-color);
+        }}
+        
+        .card h3 {{
+            font-size: 1.3rem;
+            color: #38bdf8;
             margin-top: 1rem;
-            background: white;
+        }}
+        
+        .card p {{
+            margin-bottom: 1rem;
+            color: #e2e8f0;
+            font-size: 1.05rem;
         }}
         
         .card p.desc {{
             color: var(--text-muted);
-            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            margin-top: -0.5rem;
+            margin-bottom: 1.5rem;
         }}
         
-        pre {{
-            background: rgba(15, 23, 42, 0.8);
+        .card img {{
+            width: 100%;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
-            padding: 1.5rem;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.9rem;
-            color: #a855f7;
-            white-space: pre-wrap;
+            margin-top: 0.5rem;
+            background: rgba(0, 0, 0, 0.2);
         }}
         
-        /* Table Styling */
+        /* Lists formatting */
+        .card ul, .card ol {{
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }}
+        
+        .card li {{
+            margin-bottom: 0.5rem;
+        }}
+        
+        /* Tables in Markdown */
         table {{
             width: 100%;
             border-collapse: collapse;
-            margin: 1.5rem 0;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
             font-size: 0.95rem;
         }}
         
         th, td {{
-            padding: 0.8rem;
+            padding: 0.75rem 1rem;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
         }}
         
         th {{
-            background: rgba(15, 23, 42, 0.5);
+            background-color: rgba(255, 255, 255, 0.05);
+            font-family: 'Outfit', sans-serif;
             color: var(--accent-color);
             font-weight: 600;
         }}
         
-        tr:hover td {{
+        tr:hover {{
             background: rgba(255, 255, 255, 0.02);
         }}
         
+        /* Statistical Log Output */
+        pre {{
+            background: #020617;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            color: #38bdf8;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }}
     </style>
 </head>
 <body>
@@ -240,15 +301,61 @@ def compile_report():
         </header>
         
         <div class="tabs">
-            <button class="tab-btn active" onclick="openTab(event, 'univariate')">Univariate Analysis</button>
+            <button class="tab-btn active" onclick="openTab(event, 'summary')">Executive Summary</button>
+            <button class="tab-btn" onclick="openTab(event, 'univariate')">Univariate Analysis</button>
             <button class="tab-btn" onclick="openTab(event, 'bivariate')">Bivariate Analysis</button>
             <button class="tab-btn" onclick="openTab(event, 'multivariate')">Multivariate Analysis</button>
             <button class="tab-btn" onclick="openTab(event, 'stats')">Hypothesis Testing</button>
             <button class="tab-btn" onclick="openTab(event, 'desc')">Descriptive Statistics</button>
         </div>
         
+        <!-- EXECUTIVE SUMMARY -->
+        <div id="summary" class="tab-content active">
+            <div class="card full-width">
+                <h2>1. Business Context & Problem Statement</h2>
+                <p>FlashDelivery is an online multi-category delivery platform connecting customers with restaurants, grocery stores, and pharmacies. The business operates across multiple cities offering on-demand, scheduled, and express delivery speeds. In a highly competitive market where customer acquisition costs (CAC) significantly outpace retention costs, FlashDelivery is facing a critical leak: <strong>53% of its active customer base has churned</strong> (showing no transactions in their final 90 days).</p>
+                <p>Maintaining customer retention is critical to long-term profitability, customer lifetime value (CLV), and sustainable unit economics. This exploratory data analysis (EDA) and statistical testing investigate the drivers of customer churn and repeat purchasing to provide data-driven recommendations.</p>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h2>2. Data Overview & Profiling</h2>
+                    <p>The analysis is conducted on three raw datasets consolidated into processed analytical tables:</p>
+                    <ul>
+                        <li><strong>users_profile.csv</strong>: 5,000 customers (demographics, device type, registration details).</li>
+                        <li><strong>transactions_log.csv</strong>: 73,022 orders (merchant category, basket size, USD spend, coupons applied).</li>
+                        <li><strong>fulfillments_log.csv</strong>: 73,022 delivery records (estimated vs actual times, delay minutes, content accuracy, star ratings).</li>
+                    </ul>
+                    <p>Datasets were merged into a master order-level table and customer-level feature matrices adjusted for right-censoring to prevent observation-window bias.</p>
+                </div>
+                
+                <div class="card">
+                    <h2>3. Actionable Recommendations</h2>
+                    <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li style="margin-bottom: 0.5rem;"><strong>App Migration Campaign</strong>: Proactively transition web-based users to the mobile app (where churn is significantly lower) via download incentives and push notifications.</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>First-Order Service Guarantee</strong>: Prioritize courier dispatch and contents accuracy checks on a customer's first three orders. First-impression delays are permanent retention killers.</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Cross-Category Cross-Selling</strong>: Implement recommendation engines to cross-promote services (e.g., offer grocery credits to restaurant diners). Category expansion is our strongest loyalty shield.</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Promo Spending Optimization</strong>: Shift discount budgets away from high-promo deal-seekers (whose churn rates remain elevated) and invest in service reliability and loyalty points.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="card full-width">
+                <h2>4. Key Insights & Cohesive Narrative</h2>
+                
+                <h3 style="margin-top: 1rem; color: var(--accent-color);">Insight A: The Silent Retention Crisis</h3>
+                <p>We observe that 53% of all signups eventually churn. Adjusting for right-censoring shows that 15-20% of users fail to place a second order within 30 days. For cohorts like Dec 2023, who have been on the platform for 2.5 years, the raw churn rate reaches 92.3%. This underscores the urgency of early-stage intervention.</p>
+                
+                <h3 style="margin-top: 1rem; color: var(--accent-color);">Insight B: Delivery Friction Caps Satisfaction</h3>
+                <p>Delays and contents inaccuracies on the first transaction severely depress return rates. A first-order delay directly leads to a lower return probability. Moreover, when customer-level delay averages cross 15 minutes, CSAT ratings rarely exceed 4.0 stars. Service speed is the baseline requirement for retention.</p>
+                
+                <h3 style="margin-top: 1rem; color: var(--accent-color);">Insight C: Breadth over Incentives</h3>
+                <p>Promotions do not buy long-term loyalty; standard users who use promotions on more than 80% of orders exhibit elevated churn. Instead, usage breadth is the primary driver of customer lifetime value: users shopping across multiple merchant categories have a churn rate under 30% (compared to 63.5% for single-category users).</p>
+            </div>
+        </div>
+        
         <!-- UNIVARIATE -->
-        <div id="univariate" class="tab-content active">
+        <div id="univariate" class="tab-content">
             <div class="grid">
                 <div class="card">
                     <h3>Order Value Distributions</h3>
@@ -287,8 +394,8 @@ def compile_report():
                 </div>
                 
                 <div class="card">
-                    <h3>Customer Demographics</h3>
-                    <p class="desc">Customer splits by gender, age groups, and business segments.</p>
+                    <h3>Customer Demographics (2x2 Grid)</h3>
+                    <p class="desc">Customer splits by gender, age groups, device types, and business segments.</p>
                     <img src="{figures['uni_demo']}" alt="Demographics">
                 </div>
                 
@@ -296,6 +403,18 @@ def compile_report():
                     <h3>Geographic Concentrations</h3>
                     <p class="desc">Splits across active urban cities and regional states.</p>
                     <img src="{figures['uni_loc']}" alt="Locations">
+                </div>
+                
+                <div class="card">
+                    <h3>Monthly Cohort Return Rates</h3>
+                    <p class="desc">First-order 30-day, 60-day, and 90-day return rates across monthly registration cohorts (censoring adjusted).</p>
+                    <img src="{figures['uni_cohort_rates']}" alt="Cohort Return Rates">
+                </div>
+                
+                <div class="card">
+                    <h3>Cohort Comparison (Dec 2023 vs Jan 2024+)</h3>
+                    <p class="desc">Comparing order frequency and active lifespan between the first-month cohort and later signups.</p>
+                    <img src="{figures['uni_cohort_comp']}" alt="Cohort Comparison">
                 </div>
             </div>
         </div>
@@ -337,6 +456,18 @@ def compile_report():
                     <h3>Demographics vs. Churn Rate</h3>
                     <p class="desc">Subgroup churn rates split by segments, devices, and age groups.</p>
                     <img src="{figures['bi_demo']}" alt="Demographics vs Churn">
+                </div>
+                
+                <div class="card">
+                    <h3>Delivery Experience Profile vs. Retention</h3>
+                    <p class="desc">Customer-level box plots comparing prompt rate, delays, and CSAT for active vs. churned users.</p>
+                    <img src="{figures['bi_delivery_churn']}" alt="Delivery Experience vs Retention">
+                </div>
+                
+                <div class="card">
+                    <h3>Spending Profile vs. Retention</h3>
+                    <p class="desc">Customer-level box plots comparing AOV and items count for active vs. churned users.</p>
+                    <img src="{figures['bi_spend_churn']}" alt="Spending vs Retention">
                 </div>
             </div>
         </div>
