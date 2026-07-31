@@ -1,0 +1,82 @@
+================================================================================
+DATA QUALITY AUDIT REPORT & CLEANING PLAN
+================================================================================
+
+This document details the findings of a comprehensive quality audit conducted on 
+the processed datasets (`master_orders.csv` and `customer_features.csv`) and 
+outlines the handling plan for the upcoming exploratory data analysis (EDA).
+
+--------------------------------------------------------------------------------
+1. QUALITY AUDIT FINDINGS
+--------------------------------------------------------------------------------
+
+- **Missing Values**: 
+  *Result*: **0 missing values**. 
+  All columns across both the order-level and customer-level datasets are 100% 
+  complete.
+
+- **Duplicate Rows**: 
+  *Result*: **0 duplicate rows**. 
+  Every record in `master_orders.csv` and `customer_features.csv` represents a 
+  unique entity/transaction.
+
+- **Chronological Consistency**:
+  *Result*: **100% Consistent**.
+  - All orders are placed strictly *on or after* the customer's signup date 
+    (no negative signup-to-order deltas).
+  - All customers have a non-negative active lifespan (`active_lifespan_days >= 0`).
+
+- **Numeric Bounds & Financial Integrity**:
+  *Result*: **100% Consistent**.
+  - No negative order values (`order_value_usd`), discount amounts 
+    (`discount_amount_usd`), or item counts (`items_count`).
+  - No discounts exceed the gross order value (`discount_amount_usd <= order_value_usd`).
+  - Mismatched delay minutes calculations check: **0 mismatches**. Calculated 
+    delay (`max(0, actual_time_min - promised_time_min)`) perfectly matches the 
+    `delay_minutes` field.
+  - All customer ratings are valid integers within the standard `[1, 5]` range.
+
+- **Categorical Integrity & Standardization**:
+  *Result*: **Clean and Standardized**.
+  - All categorical features (`vendor_category`, `delivery_type`, `preferred_device`, 
+    `customer_segment`, `gender`, `age_group`, `city`, `state`) have uniform casing, 
+    no trailing whitespaces, and no spelling variations.
+
+- **Outlier Audit Summary**:
+  - `Max items count`: 24 items (valid for grocery basket sizes).
+  - `Max order value`: $342.21 (valid for larger retail/grocery shopping).
+  - `Max delivery delay`: 130 minutes (severe but realistic delay in delivery).
+  - `Max orders frequency`: 126 orders over the 2.3-year tracking span (active users).
+  *Result*: High values are realistic business exceptions rather than corrupted entries.
+
+
+--------------------------------------------------------------------------------
+2. DATA CLEANING & EDA HANDLING PLAN
+--------------------------------------------------------------------------------
+Since the dataset has zero missing values, duplicate entries, or corruption anomalies, 
+no corrective deletion or imputation is required. Instead, our cleaning and handling 
+strategy will focus on preparation for modeling and analysis:
+
+1. **Date Time Parsing**:
+   *Issue*: CSV format stores dates (`order_date`, `signup_date`, `latest_order_date`) 
+   as string text.
+   *Action*: Convert these columns to Pandas datetime format immediately upon loading 
+   them in notebooks or analysis scripts.
+
+2. **Extreme Outlier Management**:
+   *Issue*: Highly active/high-spending customers and severe delays (e.g. 130 minutes) 
+   create a heavily skewed distribution.
+   *Action*:
+   - Do **not** delete these records, as they represent real customer experiences and 
+     premium revenue segments.
+   - For statistical modeling (like regressions), apply log transforms to monetary values.
+   - Use median and percentile ranges (IQRs) for operational benchmarks rather than simple 
+     averages, to avoid average inflation by extreme delays.
+
+3. **Behavioral Churn Verification**:
+   *Action*: Confirm that the behavioral churn definition (90 days of inactivity from 
+   the latest date in the dataset) does not misclassify late signups (customers who 
+   signed up in the last 90 days). In our preprocessing script `prepare_data.py`, new 
+   customers with no orders for 90 days are marked as churned, which is correct, but 
+   we will visualize cohorts to separate sign-up tenure.
+================================================================================

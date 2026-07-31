@@ -1,0 +1,102 @@
+================================================================================
+DATA DICTIONARY & HYPOTHESIS FEASIBILITY EVALUATION
+================================================================================
+
+This document contains descriptions, types, and values of the columns in the three
+raw datasets (`customers.csv`, `orders.csv`, and `deliveries.csv`), followed by an
+evaluation of their sufficiency for testing our hypotheses, and identified gaps.
+
+--------------------------------------------------------------------------------
+1. DATA DICTIONARIES
+--------------------------------------------------------------------------------
+
+A. CUSTOMERS DATASET (`customers.csv`)
+Shape: 5,000 rows, 8 columns
+No missing values.
+--------------------------------------------------------------------------------
+Column Name        | Data Type | Description / Values
+--------------------------------------------------------------------------------
+user_id            | String    | Unique identifier for the user (Primary Key)
+registration_date  | Date      | Date when the customer registered (YYYY-MM-DD)
+location_city      | String    | City of residence (12 unique values)
+location_state     | String    | State of residence (8 unique values)
+age_bracket        | String    | Age categorization ('18-25', '26-35', '36-45', '46-55', '56+')
+user_gender        | String    | Gender ('Female', 'Male', 'Other')
+account_segment    | String    | Loyalty/value segment ('Intro', 'Standard', 'Elite')
+device_type        | String    | Main platform device used ('App', 'Website')
+
+B. ORDERS DATASET (`orders.csv`)
+Shape: 73,022 rows, 10 columns
+No missing values.
+--------------------------------------------------------------------------------
+Column Name         | Data Type | Description / Values
+--------------------------------------------------------------------------------
+transaction_id      | String    | Unique identifier for the order transaction (Primary Key)
+user_id             | String    | Foreign key referencing customers.user_id
+transaction_date    | Date      | Date when the order was placed (YYYY-MM-DD)
+merchant_id         | String    | Unique identifier for the vendor (200 unique values)
+merchant_category   | String    | Category of vendor ('Eatery', 'Boutique', 'Supermarket', 'Medical')
+fulfillment_type    | String    | Speed/type of delivery ('Instant', 'Planned', 'Priority')
+quantity_items      | Integer   | Count of items purchased in the order
+gross_amount_usd    | Float     | Total value of the order in USD
+coupon_applied      | String    | Whether a discount promo was applied ('Yes', 'No')
+coupon_discount_usd | Float     | Monetary value of discount applied (0.0 if coupon_applied is 'No')
+
+C. DELIVERIES DATASET (`deliveries.csv`)
+Shape: 73,022 rows, 8 columns
+No missing values.
+--------------------------------------------------------------------------------
+Column Name         | Data Type | Description / Values
+--------------------------------------------------------------------------------
+fulfillment_id      | String    | Unique identifier for the delivery record (Primary Key)
+transaction_id      | String    | Foreign key referencing orders.transaction_id
+est_delivery_min    | Integer   | Promised delivery duration in minutes
+real_delivery_min   | Integer   | Actual delivery duration taken in minutes
+late_minutes        | Integer   | Delay in minutes (max(0, real_delivery_min - est_delivery_min))
+late_status         | String    | Delivery arrival outcome ('Prompt', 'Late')
+accuracy_status     | String    | Verification of order contents ('Accurate', 'Incomplete', 'Incorrect')
+user_rating         | Integer   | Star rating left by the customer (1 to 5 stars)
+
+
+--------------------------------------------------------------------------------
+2. HYPOTHESIS SUFFICIENCY EVALUATION
+--------------------------------------------------------------------------------
+
+- **Hypothesis 1: Delivery Friction drives Customer Churn**
+  *Evaluation*: **SUFFICIENT**.
+  *Rationale*: We can link delivery delay (late_minutes, late_status) and accuracy 
+  (accuracy_status) from `deliveries.csv` to specific orders in `orders.csv` via 
+  transaction_id. We can then join this to customer records via user_id to calculate 
+  customer lifespans, churn flags (e.g. no orders within the last 60/90 days of the 
+  dataset), and changes in repeat order frequency after experiencing a delay.
+
+- **Hypothesis 2: High Promotion Sensitivity correlates with Higher Churn**
+  *Evaluation*: **SUFFICIENT**.
+  *Rationale*: The `orders.csv` dataset contains coupon_applied and coupon_discount_usd for 
+  every transaction. We can group orders by user_id to compute a customer-level 
+  "Promo Dependency Ratio" (orders with promo / total orders) and test if customers 
+  with high ratios have shorter lifetimes or experience drop-offs when promos end.
+
+- **Hypothesis 3: Cross-Category and App-based Users show Higher Engagement**
+  *Evaluation*: **SUFFICIENT**.
+  *Rationale*: We can link device_type from `customers.csv` and merchant_category from 
+  `orders.csv` to identify users who shop cross-category (ordering from multiple 
+  categories) and check if their overall order frequency and gross_amount_usd are 
+  higher than website or single-category users.
+
+
+--------------------------------------------------------------------------------
+3. IDENTIFIED DATA GAPS & LIMITATIONS
+--------------------------------------------------------------------------------
+While the current datasets are sufficient to test all defined hypotheses, we have
+identified the following data gaps which would enhance the robustness of future analyses:
+
+1. **No Explicit Customer Churn Flag**: 
+   Since there is no "account status" or "churned" indicator in the customers dataset, 
+   churn must be defined behaviorally (e.g. customers who have not ordered in the 
+   last 60 or 90 days of the dataset). This introduces minor definition bias.
+
+2. **Lack of Unit Profitability Data (Net Economics)**:
+   While we have order values and discounts, we lack data on vendor commission rates, 
+   delivery driver payouts, marketing costs, and customer acquisition cost (CAC). 
+   This prevents full net profit margin calculations.
