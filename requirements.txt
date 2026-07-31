@@ -4,6 +4,10 @@ numpy<2.0.0
 seaborn
 scikit-learn
 tabulate
+ipykernel
+notebook
+nbformat
+nbclient
 
 # Deep learning with macOS Metal (M-series GPU) acceleration
 tensorflow==2.18.0
