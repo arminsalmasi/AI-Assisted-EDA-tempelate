@@ -20,3 +20,8 @@ htmlcov/
 .gemini/
 antigravity-ide/
 *.log
+
+# Generated data
+data/processed/
+data/interim/
+
