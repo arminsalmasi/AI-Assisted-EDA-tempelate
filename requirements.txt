@@ -8,6 +8,7 @@ ipykernel
 notebook
 nbformat
 nbclient
+statsmodels
 
 # Deep learning with macOS Metal (M-series GPU) acceleration
 tensorflow==2.18.0

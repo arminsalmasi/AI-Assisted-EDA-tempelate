@@ -26,17 +26,33 @@ def prepare_datasets():
     master_orders = pd.merge(orders_deliveries, customers, on='customer_id', how='inner')
     
     # Sort chronologically by customer and date
-    master_orders = master_orders.sort_values(by=['customer_id', 'order_date']).reset_index(drop=True)
-    
-    # Engineer Order-level Features
-    master_orders['is_delayed'] = (master_orders['delivery_status'] == 'Delayed').astype(int)
-    master_orders['is_inaccurate'] = master_orders['order_accuracy'].isin(['Partial', 'Wrong']).astype(int)
-    master_orders['days_since_signup'] = (master_orders['order_date'] - master_orders['signup_date']).dt.days
-    master_orders['net_value_usd'] = master_orders['order_value_usd'] - master_orders['discount_amount_usd']
-    master_orders['is_promo_used'] = (master_orders['promo_used'] == 'Yes').astype(int)
+    master_orders = master_orders.sort_values(by=['customer_id', 'order_date', 'order_id']).reset_index(drop=True)
     
     # Calculate chronological sequence of orders for each customer
     master_orders['order_seq'] = master_orders.groupby('customer_id').cumcount() + 1
+    master_orders['customer_order_number'] = master_orders['order_seq']
+    
+    # Next order date tracking
+    master_orders['next_order_date'] = master_orders.groupby('customer_id')['order_date'].shift(-1)
+    
+    # Calculate gap to next order (in days)
+    master_orders['days_to_next_order'] = (master_orders['next_order_date'] - master_orders['order_date']).dt.days
+    
+    # Return within window indicators (default to 0 if they didn't place a next order)
+    master_orders['returned_within_30d'] = (master_orders['days_to_next_order'] <= 30).astype(int)
+    master_orders['returned_within_60d'] = (master_orders['days_to_next_order'] <= 60).astype(int)
+    master_orders['returned_within_90d'] = (master_orders['days_to_next_order'] <= 90).astype(int)
+    
+    # Fill return indicators as 0 for the last order of customers (where days_to_next_order is NaN)
+    master_orders.loc[master_orders['days_to_next_order'].isna(), ['returned_within_30d', 'returned_within_60d', 'returned_within_90d']] = 0
+    
+    # Basic engineered features
+    master_orders['is_delayed'] = (master_orders['delivery_status'] == 'Delayed').astype(int)
+    master_orders['is_inaccurate'] = master_orders['order_accuracy'].isin(['Partial', 'Wrong']).astype(int)
+    master_orders['days_since_signup'] = (master_orders['order_date'] - master_orders['signup_date']).dt.days
+    master_orders['customer_tenure_at_order_days'] = master_orders['days_since_signup']
+    master_orders['net_value_usd'] = master_orders['order_value_usd'] - master_orders['discount_amount_usd']
+    master_orders['is_promo_used'] = (master_orders['promo_used'] == 'Yes').astype(int)
     
     # Ensure processed directory exists
     os.makedirs('data/processed', exist_ok=True)
@@ -49,14 +65,37 @@ def prepare_datasets():
     # 3. Build Aggregated Customer-level Dataset
     print("Building customer-level aggregated dataset...")
     
-    # Timeline metadata for Churn calculation
+    # Timeline metadata for Churn and Tenure calculations
     max_dataset_date = master_orders['order_date'].max()
     print(f"Max date in dataset: {max_dataset_date.strftime('%Y-%m-%d')}")
     
-    # General groupings
+    # Get first and last order details per customer
+    first_orders = master_orders[master_orders['customer_order_number'] == 1].copy()
+    last_orders = master_orders.loc[master_orders.groupby('customer_id')['customer_order_number'].idxmax()].copy()
+    
+    # Aggregations using group by
     grouped = master_orders.groupby('customer_id')
     
-    # Aggregate basic features
+    # Compute counts for specific vendor categories
+    restaurant_orders = grouped.apply(lambda df: (df['vendor_category'] == 'Restaurant').sum(), include_groups=False)
+    grocery_orders = grouped.apply(lambda df: (df['vendor_category'] == 'Grocery').sum(), include_groups=False)
+    pharmacy_orders = grouped.apply(lambda df: (df['vendor_category'] == 'Pharmacy').sum(), include_groups=False)
+    retail_orders = grouped.apply(lambda df: (df['vendor_category'] == 'Retail').sum(), include_groups=False)
+    
+    # Compute counts for specific delivery types
+    on_demand_orders = grouped.apply(lambda df: (df['delivery_type'] == 'On-Demand').sum(), include_groups=False)
+    scheduled_orders = grouped.apply(lambda df: (df['delivery_type'] == 'Scheduled').sum(), include_groups=False)
+    express_orders = grouped.apply(lambda df: (df['delivery_type'] == 'Express').sum(), include_groups=False)
+    
+    # Compute counts for delivery success and accuracy
+    on_time_deliveries = grouped.apply(lambda df: (df['delivery_status'] == 'On-Time').sum(), include_groups=False)
+    delayed_deliveries = grouped.apply(lambda df: (df['delivery_status'] == 'Delayed').sum(), include_groups=False)
+    
+    correct_orders = grouped.apply(lambda df: (df['order_accuracy'] == 'Correct').sum(), include_groups=False)
+    partial_orders = grouped.apply(lambda df: (df['order_accuracy'] == 'Partial').sum(), include_groups=False)
+    wrong_orders = grouped.apply(lambda df: (df['order_accuracy'] == 'Wrong').sum(), include_groups=False)
+    
+    # General aggregation
     cust_agg = grouped.agg(
         frequency=('order_id', 'count'),
         total_spend=('order_value_usd', 'sum'),
@@ -69,22 +108,57 @@ def prepare_datasets():
         delayed_order_ratio=('is_delayed', 'mean'),
         inaccurate_order_ratio=('is_inaccurate', 'mean'),
         promo_order_ratio=('is_promo_used', 'mean'),
-        unique_categories_ordered=('vendor_category', 'nunique'),
-        latest_order_date=('order_date', 'max')
+        promo_orders_count=('is_promo_used', 'sum'),
+        unique_vendors=('vendor_id', 'nunique'),
+        unique_vendor_categories=('vendor_category', 'nunique'),
+        unique_delivery_types=('delivery_type', 'nunique'),
+        max_delay_minutes=('delay_minutes', 'max')
     ).reset_index()
     
-    # Join customer demographic and signup features
+    # Map calculated counts
+    cust_agg['restaurant_orders'] = cust_agg['customer_id'].map(restaurant_orders)
+    cust_agg['grocery_orders'] = cust_agg['customer_id'].map(grocery_orders)
+    cust_agg['pharmacy_orders'] = cust_agg['customer_id'].map(pharmacy_orders)
+    cust_agg['retail_orders'] = cust_agg['customer_id'].map(retail_orders)
+    
+    cust_agg['on_demand_orders'] = cust_agg['customer_id'].map(on_demand_orders)
+    cust_agg['scheduled_orders'] = cust_agg['customer_id'].map(scheduled_orders)
+    cust_agg['express_orders'] = cust_agg['customer_id'].map(express_orders)
+    
+    cust_agg['on_time_deliveries'] = cust_agg['customer_id'].map(on_time_deliveries)
+    cust_agg['delayed_deliveries'] = cust_agg['customer_id'].map(delayed_deliveries)
+    
+    cust_agg['correct_orders'] = cust_agg['customer_id'].map(correct_orders)
+    cust_agg['partial_orders'] = cust_agg['customer_id'].map(partial_orders)
+    cust_agg['wrong_orders'] = cust_agg['customer_id'].map(wrong_orders)
+    
+    # Compute rates
+    cust_agg['on_time_delivery_rate'] = (cust_agg['on_time_deliveries'] / cust_agg['frequency']).round(4)
+    cust_agg['correct_order_rate'] = (cust_agg['correct_orders'] / cust_agg['frequency']).round(4)
+    
+    # Flags
+    cust_agg['repeat_customer_flag'] = (cust_agg['frequency'] > 1).astype(int)
+    cust_agg['multi_category_user_flag'] = (cust_agg['unique_vendor_categories'] > 1).astype(int)
+    cust_agg['multi_delivery_type_user_flag'] = (cust_agg['unique_delivery_types'] > 1).astype(int)
+    
+    # Join customer demographic features
     cust_agg = pd.merge(cust_agg, customers, on='customer_id', how='inner')
     
-    # Engineer Customer-level Features
-    # Active lifespan
-    cust_agg['active_lifespan_days'] = (cust_agg['latest_order_date'] - cust_agg['signup_date']).dt.days
+    # Map first and last order dates
+    first_order_dates = first_orders.set_index('customer_id')['order_date']
+    last_order_dates = last_orders.set_index('customer_id')['order_date']
     
-    # Recency and Churn flag (90 days of inactivity)
-    cust_agg['days_since_latest_order'] = (max_dataset_date - cust_agg['latest_order_date']).dt.days
+    cust_agg['first_order_date'] = cust_agg['customer_id'].map(first_order_dates)
+    cust_agg['last_order_date'] = cust_agg['customer_id'].map(last_order_dates)
+    
+    # Lifespan and recency calculations
+    cust_agg['active_lifespan_days'] = (cust_agg['last_order_date'] - cust_agg['signup_date']).dt.days
+    cust_agg['active_span_days'] = (cust_agg['last_order_date'] - cust_agg['first_order_date']).dt.days
+    cust_agg['tenure_days_at_dataset_end'] = (max_dataset_date - cust_agg['signup_date']).dt.days
+    cust_agg['days_since_latest_order'] = (max_dataset_date - cust_agg['last_order_date']).dt.days
     cust_agg['is_churned'] = (cust_agg['days_since_latest_order'] > 90).astype(int)
     
-    # 4. Engineer Early Experience (First 3 Orders) Features
+    # Early experience metrics (First 3 Orders)
     print("Engineering early experience features (First 3 Orders)...")
     first_3_orders = master_orders[master_orders['order_seq'] <= 3]
     first_3_grouped = first_3_orders.groupby('customer_id')
@@ -95,13 +169,40 @@ def prepare_datasets():
         first_3_rating_avg=('customer_rating', 'mean')
     ).reset_index()
     
-    # Merge early experience metrics
     cust_features = pd.merge(cust_agg, first_3_agg, on='customer_id', how='left')
     
-    # Fill early experience missing values with general averages (in case they have 0 reviews or orders)
+    # Fill early experience missing values with general averages
     cust_features['first_3_delayed_ratio'] = cust_features['first_3_delayed_ratio'].fillna(cust_features['delayed_order_ratio'])
     cust_features['first_3_inaccurate_ratio'] = cust_features['first_3_inaccurate_ratio'].fillna(cust_features['inaccurate_order_ratio'])
     cust_features['first_3_rating_avg'] = cust_features['first_3_rating_avg'].fillna(cust_features['average_rating'])
+    
+    # 4. Integrate First-Order return tracking with right-censoring logic
+    print("Engineering first-order return outcomes with right-censoring...")
+    first_orders_return = first_orders.set_index('customer_id')[['returned_within_30d', 'returned_within_60d', 'returned_within_90d', 'order_date']]
+    
+    cust_features = pd.merge(cust_features, first_orders_return, on='customer_id', how='left')
+    
+    # Rename columns to match Codex output
+    cust_features = cust_features.rename(columns={
+        'returned_within_30d': 'returned_after_first_order_30d',
+        'returned_within_60d': 'returned_after_first_order_60d',
+        'returned_within_90d': 'returned_after_first_order_90d'
+    })
+    
+    # Calculate observation window eligibility flags (from first order date to dataset end date)
+    days_since_first_order = (max_dataset_date - cust_features['first_order_date']).dt.days
+    cust_features['full_30d_observation_flag'] = (days_since_first_order >= 30).astype(int)
+    cust_features['full_60d_observation_flag'] = (days_since_first_order >= 60).astype(int)
+    cust_features['full_90d_observation_flag'] = (days_since_first_order >= 90).astype(int)
+    
+    # Apply right-censoring: set return flags to NaN if they did not return and look-forward window was not complete
+    cust_features.loc[(cust_features['returned_after_first_order_30d'] == 0) & (cust_features['full_30d_observation_flag'] == 0), 'returned_after_first_order_30d'] = np.nan
+    cust_features.loc[(cust_features['returned_after_first_order_60d'] == 0) & (cust_features['full_60d_observation_flag'] == 0), 'returned_after_first_order_60d'] = np.nan
+    cust_features.loc[(cust_features['returned_after_first_order_90d'] == 0) & (cust_features['full_90d_observation_flag'] == 0), 'returned_after_first_order_90d'] = np.nan
+    
+    # Convert first_order_date and last_order_date to standard string ISO format for CSV consistency
+    cust_features['first_order_date'] = cust_features['first_order_date'].dt.strftime('%Y-%m-%d')
+    cust_features['last_order_date'] = cust_features['last_order_date'].dt.strftime('%Y-%m-%d')
     
     # Save customer features dataset
     customer_features_path = 'data/processed/customer_features.csv'
