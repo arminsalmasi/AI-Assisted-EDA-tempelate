@@ -4,8 +4,8 @@ import pandas as pd
 
 class TestPreparedData(unittest.TestCase):
     def setUp(self):
-        self.master_orders_path = 'data/interim/master_orders.csv'
-        self.customer_features_path = 'data/interim/customer_features.csv'
+        self.master_orders_path = 'data/processed/master_orders.csv'
+        self.customer_features_path = 'data/processed/customer_features.csv'
 
     def test_files_exist(self):
         self.assertTrue(os.path.exists(self.master_orders_path), "master_orders.csv not found!")

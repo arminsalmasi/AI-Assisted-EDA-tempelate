@@ -50,4 +50,4 @@ test: install prepare
 
 clean:
 	$(RM) $(VENV)
-	$(RM) data/interim
+	$(RM) data/processed

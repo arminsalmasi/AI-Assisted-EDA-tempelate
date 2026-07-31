@@ -12,7 +12,7 @@ It manages environment creation, dependency resolution, data preparation/feature
 AI-Assisted-EDA-tempelate/
 ├── data/
 │   ├── raw/                 # Raw customers, orders, and deliveries CSV files (Source)
-│   └── interim/             # Cleaned and feature-engineered CSV files (Outputs)
+│   └── processed/           # Cleaned and feature-engineered CSV files (Outputs)
 ├── notebooks/               # Jupyter exploratory and prototyping notebooks
 ├── report/                  # slide decks, data dictionaries, figures, final reports
 │   └── figures/             # Exported visualizations and plots
@@ -20,7 +20,7 @@ AI-Assisted-EDA-tempelate/
 │   └── prepare_data.py      # Feature engineering and dataset merging pipeline
 ├── tests/                   # Integration and data validation tests
 │   ├── test_libraries.py    # Environment library imports and GPU check tests
-│   └── test_prepared_data.py# Interim data schema and integrity validation tests
+│   └── test_prepared_data.py# Processed data schema and integrity validation tests
 ├── Makefile                 # Automation Makefile
 ├── requirements.txt         # Pinned pip requirements with PEP 508 markers
 └── README.md                # This documentation
@@ -82,9 +82,9 @@ To run the data cleaning, merging, and feature engineering script (`src/prepare_
 ```bash
 make prepare
 ```
-This processes the raw data in `data/raw/` and outputs files in `data/interim/`:
-* `data/interim/master_orders.csv`: An order-level transaction dataset containing joined customer and delivery details, along with binary indicators for delays and inaccuracies.
-* `data/interim/customer_features.csv`: A customer-level aggregated dataset summarizing customer behavioral patterns (RFM), active lifetimes, promotion sensitivity, churn flags, and early experience delay/inaccuracy statistics.
+This processes the raw data in `data/raw/` and outputs files in `data/processed/`:
+* `data/processed/master_orders.csv`: An order-level transaction dataset containing joined customer and delivery details, along with binary indicators for delays and inaccuracies.
+* `data/processed/customer_features.csv`: A customer-level aggregated dataset summarizing customer behavioral patterns (RFM), active lifetimes, promotion sensitivity, churn flags, and early experience delay/inaccuracy statistics.
 
 ### 4. Run Verification Tests
 To run the full verification test suite (verifying imports, GPU availability, and intermediate data schema integrity):

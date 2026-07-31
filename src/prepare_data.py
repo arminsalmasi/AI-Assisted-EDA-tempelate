@@ -38,11 +38,11 @@ def prepare_datasets():
     # Calculate chronological sequence of orders for each customer
     master_orders['order_seq'] = master_orders.groupby('customer_id').cumcount() + 1
     
-    # Ensure intermediate directory exists
-    os.makedirs('data/interim', exist_ok=True)
+    # Ensure processed directory exists
+    os.makedirs('data/processed', exist_ok=True)
     
     # Save master order-level dataset
-    master_orders_path = 'data/interim/master_orders.csv'
+    master_orders_path = 'data/processed/master_orders.csv'
     master_orders.to_csv(master_orders_path, index=False)
     print(f"Saved master orders: {master_orders.shape} to {master_orders_path}")
     
@@ -104,7 +104,7 @@ def prepare_datasets():
     cust_features['first_3_rating_avg'] = cust_features['first_3_rating_avg'].fillna(cust_features['average_rating'])
     
     # Save customer features dataset
-    customer_features_path = 'data/interim/customer_features.csv'
+    customer_features_path = 'data/processed/customer_features.csv'
     cust_features.to_csv(customer_features_path, index=False)
     print(f"Saved customer features: {cust_features.shape} to {customer_features_path}")
     print("Data preparation and feature engineering successfully completed!")
